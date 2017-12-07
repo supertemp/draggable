@@ -1,6 +1,6 @@
 import {closest} from 'shared/utils';
 
-import {Accessibility, Mirror, AutoScroll} from './Plugins';
+import {Accessibility, Mirror, AutoScroll, Announcement} from './Plugins';
 
 import {
   MouseSensor,
@@ -37,6 +37,18 @@ const onDragStop = Symbol('onDragStop');
 const onDragPressure = Symbol('onDragPressure');
 const getAppendableContainer = Symbol('getAppendableContainer');
 
+const defaultClasses = {
+  'container:dragging': 'draggable-container--is-dragging',
+  'source:dragging': 'draggable-source--is-dragging',
+  'source:placed': 'draggable-source--placed',
+  'container:placed': 'draggable-container--placed',
+  'body:dragging': 'draggable--is-dragging',
+  'draggable:over': 'draggable--over',
+  'container:over': 'draggable-container--over',
+  'source:original': 'draggable--original',
+  mirror: 'draggable-mirror',
+};
+
 export const defaultOptions = {
   draggable: '.draggable-source',
   handle: null,
@@ -44,17 +56,7 @@ export const defaultOptions = {
   placedTimeout: 800,
   plugins: [],
   sensors: [],
-  classes: {
-    'container:dragging': 'draggable-container--is-dragging',
-    'source:dragging': 'draggable-source--is-dragging',
-    'source:placed': 'draggable-source--placed',
-    'container:placed': 'draggable-container--placed',
-    'body:dragging': 'draggable--is-dragging',
-    'draggable:over': 'draggable--over',
-    'container:over': 'draggable-container--over',
-    'source:original': 'draggable--original',
-    mirror: 'draggable-mirror',
-  },
+  classes: defaultClasses,
 };
 
 /**
@@ -71,9 +73,10 @@ export default class Draggable {
    * @property {Mirror} Plugins.Mirror
    * @property {Accessibility} Plugins.Accessibility
    * @property {AutoScroll} Plugins.AutoScroll
+   * @property {Announcement} Plugins.Announcement
    * @type {Object}
    */
-  static Plugins = {Mirror, Accessibility, AutoScroll};
+  static Plugins = {Mirror, Accessibility, AutoScroll, Announcement};
 
   /**
    * Draggable constructor.
@@ -130,7 +133,7 @@ export default class Draggable {
     document.addEventListener('drag:stop', this[onDragStop], true);
     document.addEventListener('drag:pressure', this[onDragPressure], true);
 
-    this.addPlugin(...[Mirror, Accessibility, AutoScroll, ...this.options.plugins]);
+    this.addPlugin(...[Mirror, Accessibility, AutoScroll, Announcement, ...this.options.plugins]);
     this.addSensor(...[MouseSensor, TouchSensor, ...this.options.sensors]);
 
     const draggableInitializedEvent = new DraggableInitializedEvent({
@@ -292,7 +295,7 @@ export default class Draggable {
    * @return {String|null}
    */
   getClassNameFor(name) {
-    return this.options.classes[name] || defaultOptions.classes[name];
+    return (this.options.classes && this.options.classes[name]) || defaultClasses[name];
   }
 
   /**
