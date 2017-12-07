@@ -20,7 +20,7 @@ import {
 } from './../DraggableEvent';
 
 import {
-  Accessibility,
+  Focusable,
   Mirror,
   AutoScroll,
 } from './../Plugins';
@@ -57,7 +57,7 @@ describe('Draggable', () => {
     test('should be available statically', () => {
       expect(Draggable.Plugins).toBeDefined();
       expect(Draggable.Plugins.Mirror).toEqual(Mirror);
-      expect(Draggable.Plugins.Accessibility).toEqual(Accessibility);
+      expect(Draggable.Plugins.Focusable).toEqual(Focusable);
       expect(Draggable.Plugins.AutoScroll).toEqual(AutoScroll);
     });
   });
@@ -117,7 +117,7 @@ describe('Draggable', () => {
         .toBeInstanceOf(Mirror);
 
       expect(newInstance.plugins[1])
-        .toBeInstanceOf(Accessibility);
+        .toBeInstanceOf(Focusable);
 
       expect(newInstance.plugins[2])
         .toBeInstanceOf(AutoScroll);

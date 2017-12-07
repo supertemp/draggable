@@ -2,5 +2,5 @@
 
 These plugins are included by draggable by default
 
-- (Accessibility)[Accessibility]
+- (Focusable)[Focusable]
 - (Mirror)[Mirror]
