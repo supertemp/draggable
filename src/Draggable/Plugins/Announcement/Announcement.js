@@ -18,8 +18,8 @@ const ROLE = 'role';
  */
 export const defaultOptions = {
   expire: 7000,
-  'drag:start': 'Picked up draggable element',
-  'drag:stop': 'Dropped draggable element',
+  'drag:start': (event) => `Picked up ${event.source.textContent.trim() || event.source.id || 'draggable element'}`,
+  'drag:stop': (event) => `Dropped ${event.source.textContent.trim() || event.source.id || 'draggable element'}`,
 };
 
 /**
@@ -54,13 +54,6 @@ export default class Announcement extends AbstractPlugin {
      * @type {Function}
      */
     this.originalTriggerMethod = this.draggable.trigger;
-
-    /**
-     * Live region element
-     * @property liveRegion
-     * @type {HTMLElement}
-     */
-    this.liveRegion = createRegion();
 
     this[onInitialize] = this[onInitialize].bind(this);
     this[onDestroy] = this[onDestroy].bind(this);
@@ -112,12 +105,7 @@ export default class Announcement extends AbstractPlugin {
    * @param {String} message
    */
   [announceMessage](message) {
-    const element = document.createElement('div');
-    element.innerHTML = message;
-    this.liveRegion.appendChild(element);
-    return setTimeout(() => {
-      this.liveRegion.removeChild(element);
-    }, this.options.expire);
+    announce(message, {expire: this.options.expire});
   }
 
   /**
@@ -125,12 +113,15 @@ export default class Announcement extends AbstractPlugin {
    * @private
    */
   [onInitialize]() {
+    // Hack until there is an api for listening for all events
     this.draggable.trigger = (event) => {
-      this[announceEvent](event);
-      this.originalTriggerMethod.call(this.draggable, event);
+      try {
+        this[announceEvent](event);
+      } finally {
+        // Ensure that original trigger is called
+        this.originalTriggerMethod.call(this.draggable, event);
+      }
     };
-
-    document.body.appendChild(this.liveRegion);
   }
 
   /**
@@ -139,8 +130,27 @@ export default class Announcement extends AbstractPlugin {
    */
   [onDestroy]() {
     this.draggable.trigger = this.originalTriggerMethod;
-    document.body.removeChild(this.liveRegion);
   }
+}
+
+/**
+ * @const {HTMLElement} liveRegion
+ */
+const liveRegion = createRegion();
+
+/**
+ * Announces message via live region
+ * @param {String} message
+ * @param {Object} options
+ * @param {Number} options.expire
+ */
+function announce(message, {expire}) {
+  const element = document.createElement('div');
+  element.innerHTML = message;
+  liveRegion.appendChild(element);
+  return setTimeout(() => {
+    liveRegion.removeChild(element);
+  }, expire);
 }
 
 /**
@@ -150,10 +160,11 @@ export default class Announcement extends AbstractPlugin {
 function createRegion() {
   const element = document.createElement('div');
 
+  element.setAttribute('id', 'draggable-live-region');
   element.setAttribute(ARIA_RELEVANT, 'additions');
-  element.setAttribute(ARIA_ATOMIC, 'false');
+  element.setAttribute(ARIA_ATOMIC, 'true');
   element.setAttribute(ARIA_LIVE, 'assertive');
-  element.setAttribute(ROLE, 'status');
+  element.setAttribute(ROLE, 'log');
 
   element.style.position = 'fixed';
   element.style.width = '1px';
@@ -163,3 +174,8 @@ function createRegion() {
 
   return element;
 }
+
+// Append live region element as early as possible
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.appendChild(liveRegion);
+});
